@@ -1,0 +1,186 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+// Structure to hold account information
+struct Account {
+    int accountNumber;
+    string name;
+    float balance;
+};
+
+// Function prototypes
+void createAccount();
+void viewBalance();
+void deposit();
+void withdraw();
+void displayMenu();
+
+int main() {
+    int choice;
+
+    // Display menu and take user choice
+    do {
+        displayMenu();
+        cout << "Enter your choice: ";
+        cin >> choice;
+        cin.ignore(); // to ignore the newline character left in the input buffer
+        
+        switch (choice) {
+            case 1:
+                createAccount();
+                break;
+            case 2:
+                viewBalance();
+                break;
+            case 3:
+                deposit();
+                break;
+            case 4:
+                withdraw();
+                break;
+            case 5:
+                cout << "Exiting... Thank you for using our banking system!" << endl;
+                break;
+            default:
+                cout << "Invalid choice. Please try again." << endl;
+        }
+    } while (choice != 5);
+
+    return 0;
+}
+
+// Function to display the menu
+void displayMenu() {
+    cout << "\n************ BANKING SYSTEM ************" << endl;
+    cout << "1. Create Account" << endl;
+    cout << "2. View Balance" << endl;
+    cout << "3. Deposit" << endl;
+    cout << "4. Withdraw" << endl;
+    cout << "5. Exit" << endl;
+}
+
+// Function to create an account
+void createAccount() {
+    Account newAccount;
+
+    cout << "Enter Account Number: ";
+    cin >> newAccount.accountNumber;
+    cin.ignore();  // To ignore the newline character
+    cout << "Enter Name: ";
+    getline(cin, newAccount.name);
+    newAccount.balance = 0.0;
+
+    // Save account details to a file
+    ofstream outFile("accounts.dat", ios::app | ios::binary);
+    if (outFile) {
+        outFile.write(reinterpret_cast<char*>(&newAccount), sizeof(newAccount));
+        cout << "Account created successfully!" << endl;
+    } else {
+        cout << "Error creating account." << endl;
+    }
+    outFile.close();
+}
+
+// Function to view balance
+void viewBalance() {
+    int accountNumber;
+    bool found = false;
+    Account account;
+
+    cout << "Enter Account Number to view balance: ";
+    cin >> accountNumber;
+
+    ifstream inFile("accounts.dat", ios::in | ios::binary);
+    if (inFile) {
+        while (inFile.read(reinterpret_cast<char*>(&account), sizeof(account))) {
+            if (account.accountNumber == accountNumber) {
+                cout << "Account Number: " << account.accountNumber << endl;
+                cout << "Account Holder: " << account.name << endl;
+                cout << "Balance: $" << account.balance << endl;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            cout << "Account not found!" << endl;
+        }
+    } else {
+        cout << "Error reading from file!" << endl;
+    }
+    inFile.close();
+}
+
+// Function to deposit money
+void deposit() {
+    int accountNumber;
+    float amount;
+    bool found = false;
+    Account account;
+
+    cout << "Enter Account Number to deposit: ";
+    cin >> accountNumber;
+    cout << "Enter amount to deposit: $";
+    cin >> amount;
+
+    fstream file("accounts.dat", ios::in | ios::out | ios::binary);
+    if (file) {
+        while (file.read(reinterpret_cast<char*>(&account), sizeof(account))) {
+            if (account.accountNumber == accountNumber) {
+                account.balance += amount;
+                file.seekp(-static_cast<long>(sizeof(account)), ios::cur);
+                file.write(reinterpret_cast<char*>(&account), sizeof(account));
+                cout << "Deposit successful. New Balance: $" << account.balance << endl;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            cout << "Account not found!" << endl;
+        }
+    } else {
+        cout << "Error accessing the file!" << endl;
+    }
+    file.close();
+}
+
+// Function to withdraw money
+void withdraw() {
+    int accountNumber;
+    float amount;
+    bool found = false;
+    Account account;
+
+    cout << "Enter Account Number to withdraw from: ";
+    cin >> accountNumber;
+    cout << "Enter amount to withdraw: $";
+    cin >> amount;
+
+    fstream file("accounts.dat", ios::in | ios::out | ios::binary);
+    if (file) {
+        while (file.read(reinterpret_cast<char*>(&account), sizeof(account))) {
+            if (account.accountNumber == accountNumber) {
+                if (account.balance >= amount) {
+                    account.balance -= amount;
+                    file.seekp(-static_cast<long>(sizeof(account)), ios::cur);
+                    file.write(reinterpret_cast<char*>(&account), sizeof(account));
+                    cout << "Withdrawal successful. New Balance: $" << account.balance << endl;
+                } else {
+                    cout << "Insufficient balance!" << endl;
+                }
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            cout << "Account not found!" << endl;
+        }
+    } else {
+        cout << "Error accessing the file!" << endl;
+    }
+    file.close();
+}
